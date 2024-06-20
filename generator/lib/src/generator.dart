@@ -1422,7 +1422,15 @@ if (T != dynamic &&
     final queryParameters = queries.map((p, r) {
       final key = r.peek(_valueVar)?.stringValue ?? p.displayName;
       final Expression value;
-      if (_isBasicType(p.type) ||
+      if (p.type.isDartCoreList && 
+          p.type is ParameterizedType && 
+          clientAnnotation.parser == retrofit.Parser.JsonSerializable && 
+          _isEnum((p.type as ParameterizedType).typeArguments.first) && 
+          _hasToJson((p.type as ParameterizedType).typeArguments.first)) {
+        value = p.type.nullabilitySuffix == NullabilitySuffix.question
+            ? refer(p.displayName).nullSafeProperty('map').call([refer('(e) => e.toJson()')]).property('toList').call([])
+            : refer(p.displayName).property('map').call([refer('(e) => e.toJson()')]).property('toList').call([]);
+      } else if (_isBasicType(p.type) ||
           p.type.isDartCoreList ||
           p.type.isDartCoreMap) {
         value = refer(p.displayName);
